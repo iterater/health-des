@@ -1,6 +1,5 @@
-- States and places  probabilities
-- Generation from CDF (quantiles)
 - Generation steps for patients
 - Generating patients flow
 - Bed facilities and overwhelming
 - Queue and surgery rooms
+- Schedule limitations for surgery rooms
