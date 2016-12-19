@@ -22,6 +22,7 @@ class RvFromData(rv_continuous):
 
 class StateInfo:
     """Generating state information"""
+
     duration_generator = None
     transition_generator = None
 

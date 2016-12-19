@@ -1,5 +1,4 @@
-- Generation steps for patients
-- Generating patients flow
+- Queue and surgery rooms: log
+- Background patients flow generation
 - Bed facilities and overwhelming
-- Queue and surgery rooms
 - Schedule limitations for surgery rooms
