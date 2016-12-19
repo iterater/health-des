@@ -1,4 +1,2 @@
-- Queue and surgery rooms: log
-- Background patients flow generation
 - Bed facilities and overwhelming
 - Schedule limitations for surgery rooms
