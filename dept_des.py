@@ -9,11 +9,13 @@ def patient(env, patient_id, starting_state, states_pool, surgery_resource, logg
     state = starting_state
     while not states_pool[state].is_final:
         logger.append({'ID': patient_id, 'TIME': env.now, 'STATE': state,
-                       'DIRECTION': 'IN', 'QUEUE_TIME': 0})
+                       'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
         # print(env.now, logger[-1])
         surgery_state = state[0] in ['N', 'I']
         time_before_queue = env.now
+        queue_length = 0
         if surgery_state:
+            queue_length = len(surgery_resource.queue)
             request = surgery_resource.request()
             yield request
         time_in_queue = env.now - time_before_queue
@@ -22,44 +24,44 @@ def patient(env, patient_id, starting_state, states_pool, surgery_resource, logg
         if surgery_state:
             surgery_resource.release(request)
         logger.append({'ID': patient_id, 'TIME': env.now, 'STATE': state,
-                       'DIRECTION': 'OUT', 'QUEUE_TIME': time_in_queue})
+                       'DIRECTION': 'OUT', 'QUEUE_TIME': time_in_queue, 'QUEUE_LENGTH': queue_length})
         # print(env.now, logger[-1])
         state = states_pool[state].generate_next_state()
     logger.append({'ID': patient_id, 'TIME': env.now, 'STATE': state,
-                   'DIRECTION': 'IN', 'QUEUE_TIME': 0})
+                   'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
 
 
 def background_surgery_process(env, surgery_resource, duration, logger):
     """Processing request to surgery room"""
-    logger.append({'ID': -1, 'TIME': env.now, 'STATE': 'IXX',
-                   'DIRECTION': 'IN', 'QUEUE_TIME': 0})
+    logger.append({'ID': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'IN',
+                   'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
     time_before_queue = env.now
     request = surgery_resource.request()
     yield request
     yield env.timeout(duration)
     surgery_resource.release(request)
-    logger.append({'ID': -1, 'TIME': env.now, 'STATE': 'IXX',
-                   'DIRECTION': 'OUT', 'QUEUE_TIME': env.now - time_before_queue})
+    logger.append({'ID': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'OUT',
+                   'QUEUE_TIME': env.now - time_before_queue, 'QUEUE_LENGTH': 0})
 
 
-def generate_day_sequence(per_day_gen, time_in_day_gen):
+def generate_day_sequence(per_day_gen, time_in_day_gen, scale=1.0):
     """Generating sequence of requests within 24h"""
     seq = [0, 24*60]
-    n = int(per_day_gen.rvs())
-    for i in range(n):
+    n = per_day_gen.rvs()
+    for i in range(int(n * scale)):
         seq.append(int(time_in_day_gen.rvs()))
     seq.sort()
     return seq
 
 
-def background_emitter(env, surgery_resource, logger):
+def background_emitter(env, surgery_resource, logger, scale=1.0):
     """Generating daily activity in surgery room"""
     per_day_gen = state_info.RvFromData(np.loadtxt('data\\total_surgeries_per_day.txt').flatten())
     time_in_day_gen = state_info.RvFromData(np.loadtxt('data\\total_surgeries_time_in_day.txt').flatten())
     duration_gen = state_info.RvFromData(np.loadtxt('data\\total_surgeries_duration.txt').flatten())
     while True:
-        seq = generate_day_sequence(per_day_gen, time_in_day_gen)
-        print('Background surgery sequence for day: ', seq)
+        seq = generate_day_sequence(per_day_gen, time_in_day_gen, scale)
+        # print('Background surgery sequence for day: ', seq)
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
             env.process(background_surgery_process(env, surgery_resource, int(duration_gen.rvs()), logger))
@@ -73,7 +75,7 @@ def emitter(env, states_pool, surgery_resource, logger):
     counter = 0
     while True:
         seq = generate_day_sequence(per_day_gen, time_in_day_gen)
-        print('Planned sequence for day: ', seq)
+        # print('Planned sequence for day: ', seq)
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
             env.process(patient(env, counter, '_01', states_pool, surgery_resource, logger))
@@ -82,11 +84,11 @@ def emitter(env, states_pool, surgery_resource, logger):
         yield env.timeout(seq[-1] - seq[-2])
 
 
-def simulate_patients_flow(n_surgeries, states_pool, simulation_time):
+def simulate_patients_flow(n_surgeries, states_pool, simulation_time, background_scale):
     log_track = []
     env = simpy.Environment()
     res = simpy.Resource(env, capacity=n_surgeries)
     env.process(emitter(env, states_pool, res, log_track))
-    env.process(background_emitter(env, res, log_track))
+    env.process(background_emitter(env, res, log_track, background_scale))
     env.run(until=simulation_time)
-    return pd.DataFrame(log_track, columns=['TIME', 'ID', 'STATE', 'DIRECTION', 'QUEUE_TIME'])
+    return pd.DataFrame(log_track, columns=log_track[0].keys())
