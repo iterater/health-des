@@ -1,4 +1,6 @@
+import pandas as pd
 import numpy as np
+import os
 from scipy.stats import rv_discrete, rv_continuous
 
 
@@ -48,3 +50,23 @@ class StateInfo:
             return 0.0
         else:
             return self.duration_generator.rvs()
+
+
+def load_state_pool(transition_matrix_file_path, states_time_dir_path):
+    """Load set of states form matrix and directory"""
+    prob_matrix = pd.read_csv(transition_matrix_file_path, sep=';')
+    states_names = list(prob_matrix.columns[1:])
+    states = {}
+    for name in states_names:
+        if name == '*01':
+            st = StateInfo(name, transition_names=states_names, is_final=True)
+        elif name == '_01':
+            st = StateInfo(name, transition_names=states_names,
+                           transition_probabilities=list(prob_matrix[states_names].iloc[states_names.index(name)]))
+        else:
+            observations = np.loadtxt(os.path.join(states_time_dir_path, name + '.txt'), delimiter=',', dtype=float)
+            t_prob = list(prob_matrix[states_names].iloc[states_names.index(name)])
+            st = StateInfo(name, transition_names=states_names, transition_probabilities=t_prob,
+                           duration_observations=observations)
+        states[st.name] = st
+    return states
