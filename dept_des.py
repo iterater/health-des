@@ -1,7 +1,7 @@
 import pandas as pd
-import numpy as np
 import simpy
-import state_info
+import scipy.stats.mstats
+import numpy as np
 
 
 def patient(env, patient_id, starting_state, states_pool, surgery_resource, logger):
@@ -54,41 +54,55 @@ def generate_day_sequence(per_day_gen, time_in_day_gen, scale=1.0):
     return seq
 
 
-def background_emitter(env, surgery_resource, logger, scale=1.0):
+def background_emitter(env, surgery_resource, logger,
+                       surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale):
     """Generating daily activity in surgery room"""
-    per_day_gen = state_info.RvFromData(np.loadtxt('data\\total_surgeries_per_day.txt').flatten())
-    time_in_day_gen = state_info.RvFromData(np.loadtxt('data\\total_surgeries_time_in_day.txt').flatten())
-    duration_gen = state_info.RvFromData(np.loadtxt('data\\total_surgeries_duration.txt').flatten())
     while True:
-        seq = generate_day_sequence(per_day_gen, time_in_day_gen, scale)
+        seq = surgery_bg_event_generator.generate_day_sequence(scale=surgery_bg_scale)
         # print('Background surgery sequence for day: ', seq)
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
-            env.process(background_surgery_process(env, surgery_resource, int(duration_gen.rvs()), logger))
+            env.process(background_surgery_process(env, surgery_resource, int(surgery_bg_time_generator.rvs()), logger))
         yield env.timeout(seq[-1] - seq[-2])
 
 
-def emitter(env, states_pool, surgery_resource, logger):
+def target_emitter(env, target_event_generator, target_patient_generator, surgery_resource, logger):
     """Emitting patients with inter-patients time by span generator"""
-    per_day_gen = state_info.RvFromData(np.loadtxt('data\\planned_in_per_day.txt').flatten())
-    time_in_day_gen = state_info.RvFromData(np.loadtxt('data\\planned_in_time_in_day.txt').flatten())
     counter = 0
     while True:
-        seq = generate_day_sequence(per_day_gen, time_in_day_gen)
+        seq = target_event_generator.generate_day_sequence()
         # print('Planned sequence for day: ', seq)
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
-            env.process(patient(env, counter, '_01', states_pool, surgery_resource, logger))
+            pat_state, pat_pool = target_patient_generator.get_patient()
+            env.process(patient(env, counter, pat_state, pat_pool, surgery_resource, logger))
             counter += 1
             # print(str(env.now) + ': emitting new patient #' + str(counter) + ' at ' + str(seq[i]))
         yield env.timeout(seq[-1] - seq[-2])
 
 
-def simulate_patients_flow(n_surgeries, states_pool, simulation_time, background_scale):
+def simulate_patients_flow(target_patient_generator, target_event_generator,
+                           surgery_rooms_n, surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale,
+                           simulation_time):
+    """Run main simulation cycle"""
     log_track = []
     env = simpy.Environment()
-    res = simpy.Resource(env, capacity=n_surgeries)
-    env.process(emitter(env, states_pool, res, log_track))
-    env.process(background_emitter(env, res, log_track, background_scale))
+    res = simpy.Resource(env, capacity=surgery_rooms_n)
+    env.process(target_emitter(env, target_event_generator, target_patient_generator, res, log_track))
+    env.process(background_emitter(env, res, log_track,
+                                   surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale))
     env.run(until=simulation_time)
     return pd.DataFrame(log_track, columns=log_track[0].keys())
+
+
+def get_queue_statistics(sim_res):
+    """Basic stats for queue witing time"""
+    mask = [st[0] in ['N', 'I'] for st in sim_res.STATE] & (sim_res.DIRECTION == 'OUT') & (sim_res.ID >= 0)
+    mask_with_queue = mask & (sim_res.QUEUE_TIME > 0)
+    qq = scipy.stats.mstats.mquantiles(sim_res[mask_with_queue].QUEUE_TIME)
+    return {'PART': mask_with_queue.sum() / mask.sum(),
+            'MIN': sim_res[mask_with_queue].QUEUE_TIME.min(),
+            'MAX': sim_res[mask_with_queue].QUEUE_TIME.max(),
+            'AVG': np.average(sim_res[mask_with_queue].QUEUE_TIME),
+            'Q1': qq[0], 'Q2': qq[1], 'Q3': qq[2],
+            'MAX_QUEUE_LENGTH': sim_res[mask_with_queue].QUEUE_LENGTH.max()}

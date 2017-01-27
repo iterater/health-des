@@ -22,6 +22,22 @@ class RvFromData(rv_continuous):
         return (idx - 1.0 + (x - self.data[idx - 1]) / (self.data[idx] - self.data[idx - 1])) / len(self.data)
 
 
+class PatientsDayFlowGenerator:
+    """Generating patients flow for day"""
+
+    def __init__(self, events_per_day_file, events_time_file):
+        self.per_day_gen = RvFromData(np.loadtxt(events_per_day_file).flatten())
+        self.time_in_day_gen = RvFromData(np.loadtxt(events_time_file).flatten())
+
+    def generate_day_sequence(self, scale=1.0):
+        seq = [0, 24 * 60]
+        n = self.per_day_gen.rvs()
+        for i in range(int(n * scale)):
+            seq.append(int(self.time_in_day_gen.rvs()))
+        seq.sort()
+        return seq
+
+
 class StateInfo:
     """Generating state information"""
 
@@ -64,9 +80,23 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path):
             st = StateInfo(name, transition_names=states_names,
                            transition_probabilities=list(prob_matrix[states_names].iloc[states_names.index(name)]))
         else:
-            observations = np.loadtxt(os.path.join(states_time_dir_path, name + '.txt'), delimiter=',', dtype=float)
+            f = open('data\\acs\\Distr_states_6\\A00.txt')
+            s = f.readlines()[-1].replace('[', '').replace(']', '').replace(' ', '')
+            observations = np.array(list(map(int, s.split(','))), dtype=float)
+            # observations = np.loadtxt(os.path.join(states_time_dir_path, name + '.txt'), delimiter=',', dtype=float)
             t_prob = list(prob_matrix[states_names].iloc[states_names.index(name)])
             st = StateInfo(name, transition_names=states_names, transition_probabilities=t_prob,
                            duration_observations=observations)
         states[st.name] = st
     return states
+
+
+class PatientGenerator:
+    """Generate patient with initial state"""
+    def __init__(self, types_p, types_state_pool):
+        self.generator = rv_discrete(values=(np.arange(len(types_p)), types_p))
+        self.types_state_pool = types_state_pool
+
+    def get_patient(self):
+        type_id = self.generator.rvs()
+        return '_01', self.types_state_pool[type_id]

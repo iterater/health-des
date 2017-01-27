@@ -2,8 +2,6 @@
 
 ## Priority 0
 
-- Unify work with flow generators 
-- Parameters for ACS patients flow
 - LoS simulation
 
 ## Priority 1 
