@@ -80,10 +80,12 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path):
             st = StateInfo(name, transition_names=states_names,
                            transition_probabilities=list(prob_matrix[states_names].iloc[states_names.index(name)]))
         else:
-            f = open('data\\acs\\Distr_states_6\\A00.txt')
-            s = f.readlines()[-1].replace('[', '').replace(']', '').replace(' ', '')
-            observations = np.array(list(map(int, s.split(','))), dtype=float)
             # observations = np.loadtxt(os.path.join(states_time_dir_path, name + '.txt'), delimiter=',', dtype=float)
+            f = open(os.path.join(states_time_dir_path, name + '.txt'))
+            s = f.readlines()[-1].replace('[', '').replace(']', '').replace(' ', '')
+            f.close()
+            observations = np.array(list(map(int, s.split(','))), dtype=float)
+            # filtering
             t_prob = list(prob_matrix[states_names].iloc[states_names.index(name)])
             st = StateInfo(name, transition_names=states_names, transition_probabilities=t_prob,
                            duration_observations=observations)

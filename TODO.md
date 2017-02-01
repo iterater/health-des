@@ -2,6 +2,7 @@
 
 ## Priority 0
 
+- Filtering zeros and outliers
 - LoS simulation
 
 ## Priority 1 
