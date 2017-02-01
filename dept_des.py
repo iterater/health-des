@@ -4,11 +4,11 @@ import scipy.stats.mstats
 import numpy as np
 
 
-def patient(env, patient_id, starting_state, states_pool, surgery_resource, logger):
+def patient(env, patient_id, pat_class_id, starting_state, states_pool, surgery_resource, logger):
     """Processing patients through the pool of states with queueing for states N* and I*"""
     state = starting_state
     while not states_pool[state].is_final:
-        logger.append({'ID': patient_id, 'TIME': env.now, 'STATE': state,
+        logger.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
                        'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
         # print(env.now, logger[-1])
         surgery_state = state[0] in ['N', 'I']
@@ -23,24 +23,24 @@ def patient(env, patient_id, starting_state, states_pool, surgery_resource, logg
         yield env.timeout(duration)
         if surgery_state:
             surgery_resource.release(request)
-        logger.append({'ID': patient_id, 'TIME': env.now, 'STATE': state,
+        logger.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
                        'DIRECTION': 'OUT', 'QUEUE_TIME': time_in_queue, 'QUEUE_LENGTH': queue_length})
         # print(env.now, logger[-1])
         state = states_pool[state].generate_next_state()
-    logger.append({'ID': patient_id, 'TIME': env.now, 'STATE': state,
+    logger.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
                    'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
 
 
 def background_surgery_process(env, surgery_resource, duration, logger):
     """Processing request to surgery room"""
-    logger.append({'ID': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'IN',
+    logger.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'IN',
                    'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
     time_before_queue = env.now
     request = surgery_resource.request()
     yield request
     yield env.timeout(duration)
     surgery_resource.release(request)
-    logger.append({'ID': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'OUT',
+    logger.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'OUT',
                    'QUEUE_TIME': env.now - time_before_queue, 'QUEUE_LENGTH': 0})
 
 
@@ -74,8 +74,8 @@ def target_emitter(env, target_event_generator, target_patient_generator, surger
         # print('Planned sequence for day: ', seq)
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
-            pat_state, pat_pool = target_patient_generator.get_patient()
-            env.process(patient(env, counter, pat_state, pat_pool, surgery_resource, logger))
+            pat_state, pat_pool, pat_class = target_patient_generator.get_patient()
+            env.process(patient(env, counter, pat_class, pat_state, pat_pool, surgery_resource, logger))
             counter += 1
             # print(str(env.now) + ': emitting new patient #' + str(counter) + ' at ' + str(seq[i]))
         yield env.timeout(seq[-1] - seq[-2])

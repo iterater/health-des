@@ -99,4 +99,4 @@ class PatientGenerator:
 
     def get_patient(self):
         type_id = self.generator.rvs()
-        return '_01', self.types_state_pool[type_id]
+        return '_01', self.types_state_pool[type_id], type_id
