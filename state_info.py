@@ -68,7 +68,7 @@ class StateInfo:
             return self.duration_generator.rvs()
 
 
-def load_state_pool(transition_matrix_file_path, states_time_dir_path):
+def load_state_pool(transition_matrix_file_path, states_time_dir_path, filering=True):
     """Load set of states form matrix and directory"""
     prob_matrix = pd.read_csv(transition_matrix_file_path, sep=';')
     states_names = list(prob_matrix.columns[1:])
@@ -84,8 +84,9 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path):
             f = open(os.path.join(states_time_dir_path, name + '.txt'))
             s = f.readlines()[-1].replace('[', '').replace(']', '').replace(' ', '')
             f.close()
-            observations = np.array(list(map(int, s.split(','))), dtype=float)
-            # filtering
+            observations = np.array(list(map(float, s.split(','))), dtype=float)
+            if filering:
+                observations = observations[observations > 0]
             t_prob = list(prob_matrix[states_names].iloc[states_names.index(name)])
             st = StateInfo(name, transition_names=states_names, transition_probabilities=t_prob,
                            duration_observations=observations)
