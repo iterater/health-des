@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-ps = os.path.pathsep
-basic_path =  'data' + ps + 'acs' + ps
+ps = os.path.sep
+basic_path = 'data' + ps + 'acs' + ps
 
 # reading paths clusters
 clusters = pd.read_csv(basic_path + 'clusters_size.csv', delimiter=';')
@@ -31,7 +31,7 @@ background_surgery_duration_gen = state_info.RvFromData(np.loadtxt('data' + ps +
 total_log = []
 background_scale = 0.7
 surgeries_number = 2
-simulation_time = 120*24*60
+simulation_time = 240*24*60
 sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, surgeries_number, background_surgery_gen,
                                           background_surgery_duration_gen, background_scale, simulation_time)
 # counting LoS
