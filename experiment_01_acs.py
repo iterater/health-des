@@ -29,8 +29,8 @@ background_surgery_duration_gen = state_info.RvFromData(np.loadtxt('data' + ps +
 
 # simulation run
 total_log = []
-background_scale = 0.7
-surgeries_number = 2
+background_scale = 0.01
+surgeries_number = 20
 simulation_time = 240*24*60
 sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, surgeries_number, background_surgery_gen,
                                           background_surgery_duration_gen, background_scale, simulation_time)

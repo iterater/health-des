@@ -14,14 +14,14 @@ def patient(env, patient_id, pat_class_id, starting_state, states_pool, surgery_
         surgery_state = state[0] in ['N', 'I']
         time_before_queue = env.now
         queue_length = 0
-        if surgery_state:
+        if (surgery_resource is not None) and surgery_state:
             queue_length = len(surgery_resource.queue)
             request = surgery_resource.request()
             yield request
         time_in_queue = env.now - time_before_queue
         duration = int(states_pool[state].generate_duration())
         yield env.timeout(duration)
-        if surgery_state:
+        if (surgery_resource is not None) and surgery_state:
             surgery_resource.release(request)
         logger.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
                        'DIRECTION': 'OUT', 'QUEUE_TIME': time_in_queue, 'QUEUE_LENGTH': queue_length})
@@ -37,9 +37,11 @@ def background_surgery_process(env, surgery_resource, duration, logger):
                    'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
     time_before_queue = env.now
     request = surgery_resource.request()
-    yield request
+    if surgery_resource is not None:
+        yield request
     yield env.timeout(duration)
-    surgery_resource.release(request)
+    if surgery_resource is not None:
+        surgery_resource.release(request)
     logger.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'OUT',
                    'QUEUE_TIME': env.now - time_before_queue, 'QUEUE_LENGTH': 0})
 
@@ -83,11 +85,11 @@ def target_emitter(env, target_event_generator, target_patient_generator, surger
 
 def simulate_patients_flow(target_patient_generator, target_event_generator,
                            surgery_rooms_n, surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale,
-                           simulation_time):
+                           simulation_time, use_queueing=True):
     """Run main simulation cycle"""
     log_track = []
     env = simpy.Environment()
-    res = simpy.Resource(env, capacity=surgery_rooms_n)
+    res = simpy.Resource(env, capacity=surgery_rooms_n) if use_queueing else None
     env.process(target_emitter(env, target_event_generator, target_patient_generator, res, log_track))
     env.process(background_emitter(env, res, log_track,
                                    surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale))
