@@ -31,9 +31,10 @@ background_surgery_duration_gen = state_info.RvFromData(np.loadtxt('data' + ps +
 total_log = []
 background_scale = 0.01
 surgeries_number = 20
-simulation_time = 240*24*60
+simulation_time = 365*24*60
 sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, surgeries_number, background_surgery_gen,
-                                          background_surgery_duration_gen, background_scale, simulation_time)
+                                          background_surgery_duration_gen, background_scale, simulation_time,
+                                          use_queueing=False)
 # counting LoS
 sim_res.to_csv('logs' + ps + 'sim-res-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
 los_gr = sim_res[(sim_res.ID >= 0) &

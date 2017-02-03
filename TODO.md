@@ -3,7 +3,7 @@
 ## Priority 0
 
 - LoS checking for different states
-- Filtering zeros and outliers (?)
+- Filtering zeros and outliers (check outliers?)
 
 ## Priority 1 
 

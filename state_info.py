@@ -86,7 +86,15 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path, filtering
             f.close()
             observations = np.array(list(map(float, s.split(','))), dtype=float)
             if filtering:
+                # filtering zeros
                 observations = observations[observations > 0]
+                # filtering outliers with Tukey's test
+                q1 = np.percentile(observations, 25)
+                q3 = np.percentile(observations, 75)
+                k = 2.0
+                acceptable_range = (q1 - k * (q3 - q1), q3 + k * (q3 - q1))
+                observations = observations[(observations > acceptable_range[0]) &
+                                            (observations < acceptable_range[1])]
             t_prob = list(prob_matrix[states_names].iloc[states_names.index(name)])
             st = StateInfo(name, transition_names=states_names, transition_probabilities=t_prob,
                            duration_observations=observations)
