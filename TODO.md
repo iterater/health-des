@@ -2,6 +2,7 @@
 
 ## Priority 0
 
+- Target scale
 - Check outliers condition (k < 2) with single experiment
 - Run simulation for different scale and number of surgeries
 - Checking queue stats

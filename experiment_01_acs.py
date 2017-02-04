@@ -53,9 +53,9 @@ background_surgery_duration_gen = state_info.RvFromData(np.loadtxt('data' + ps +
 # run series
 total_log = []
 simulation_time = 60*24*60
-for bgf_scale in np.arange(0.5, 3.0, 0.5):
+for bgf_scale in np.arange(0.0, 2.5, 0.5):
     for nps in [1, 2, 3]:
-        for i_run in range(10):
+        for i_run in range(30):
             sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, nps,
                                                       background_surgery_gen, background_surgery_duration_gen,
                                                       bgf_scale, simulation_time, use_queueing=True)
