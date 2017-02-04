@@ -2,8 +2,9 @@
 
 ## Priority 0
 
-- LoS checking for different states
-- Filtering zeros and outliers (check outliers?)
+- Check outliers condition (k < 2) with single experiment
+- Run simulation for different scale and number of surgeries
+- Checking queue stats
 
 ## Priority 1 
 

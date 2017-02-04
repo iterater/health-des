@@ -27,36 +27,43 @@ background_surgery_gen = state_info.PatientsDayFlowGenerator('data' + ps + 'tota
 background_surgery_duration_gen = state_info.RvFromData(np.loadtxt('data' + ps + 'total_surgeries_duration.txt').
                                                         flatten())
 
-# simulation run
-total_log = []
-background_scale = 0.01
-surgeries_number = 20
-simulation_time = 365*24*60
-sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, surgeries_number, background_surgery_gen,
-                                          background_surgery_duration_gen, background_scale, simulation_time,
-                                          use_queueing=False)
-# counting LoS
-sim_res.to_csv('logs' + ps + 'sim-res-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
-los_gr = sim_res[(sim_res.ID >= 0) &
-                 (sim_res.STATE.str.contains('E') |
-                  sim_res.STATE.str.contains('F'))].groupby(['ID', 'STATE'])['TIME']
-los = np.array((los_gr.max() - los_gr.min()).sum(level=0), dtype=float)
-sns.distplot(los / (60.0 * 24.0))
-plt.savefig('pics' + ps + 'los-FE-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.png')
-plt.close()
-los_gr = sim_res[sim_res.ID >= 0].groupby('ID')['TIME']
-los = np.array(los_gr.max() - los_gr.min(), dtype=float)
-sns.distplot(los / (60.0 * 24.0))
-plt.savefig('pics' + ps + 'los-ALL-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.png')
-plt.close()
-# saving stats
-sim_stats = dept_des.get_queue_statistics(sim_res)
-sim_stats['SCALE'] = background_scale
-sim_stats['N_SURG'] = surgeries_number
-print(sim_stats)
-total_log.append(sim_stats)
+# single simulation run
+# background_scale = 0.1
+# surgeries_number = 2
+# simulation_time = 365*24*60
+# sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, surgeries_number, background_surgery_gen,
+#                                           background_surgery_duration_gen, background_scale, simulation_time,
+#                                           use_queueing=False)
+# sim_res.to_csv('logs' + ps + 'sim-res-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
 
-# writing total log
-# total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
-# total_log_df.to_csv('logs' + ps + 'queue-stats-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
+# plotting LoS
+# los_gr = sim_res[(sim_res.ID >= 0) &
+#                  (sim_res.STATE.str.contains('E') |
+#                   sim_res.STATE.str.contains('F'))].groupby(['ID', 'STATE'])['TIME']
+# los = np.array((los_gr.max() - los_gr.min()).sum(level=0), dtype=float)
+# sns.distplot(los / (60.0 * 24.0))
+# plt.savefig('pics' + ps + 'los-FE-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.png')
+# plt.close()
+# los_gr = sim_res[sim_res.ID >= 0].groupby('ID')['TIME']
+# los = np.array(los_gr.max() - los_gr.min(), dtype=float)
+# sns.distplot(los / (60.0 * 24.0))
+# plt.savefig('pics' + ps + 'los-ALL-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.png')
+# plt.close()
+
+# run series
+total_log = []
+simulation_time = 60*24*60
+for bgf_scale in np.arange(0.5, 3.0, 0.5):
+    for nps in [1, 2, 3]:
+        for i_run in range(10):
+            sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, nps,
+                                                      background_surgery_gen, background_surgery_duration_gen,
+                                                      bgf_scale, simulation_time, use_queueing=True)
+            sim_stats = dept_des.get_queue_statistics(sim_res)
+            sim_stats['SCALE'] = bgf_scale
+            sim_stats['N_SURG'] = nps
+            print(sim_stats)
+            total_log.append(sim_stats)
+total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
+total_log_df.to_csv('logs' + ps + 'queue-stats-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
 
