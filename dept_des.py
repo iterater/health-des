@@ -68,11 +68,11 @@ def background_emitter(env, surgery_resource, logger,
         yield env.timeout(seq[-1] - seq[-2])
 
 
-def target_emitter(env, target_event_generator, target_patient_generator, surgery_resource, logger):
+def target_emitter(env, target_event_generator, target_patient_generator, surgery_resource, logger, target_scale=1.0):
     """Emitting patients with inter-patients time by span generator"""
     counter = 0
     while True:
-        seq = target_event_generator.generate_day_sequence()
+        seq = target_event_generator.generate_day_sequence(scale=target_scale)
         # print('Planned sequence for day: ', seq)
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
@@ -85,12 +85,13 @@ def target_emitter(env, target_event_generator, target_patient_generator, surger
 
 def simulate_patients_flow(target_patient_generator, target_event_generator,
                            surgery_rooms_n, surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale,
-                           simulation_time, use_queueing=True):
+                           target_flow_scale, simulation_time, use_queueing=True):
     """Run main simulation cycle"""
     log_track = []
     env = simpy.Environment()
     res = simpy.Resource(env, capacity=surgery_rooms_n) if use_queueing else None
-    env.process(target_emitter(env, target_event_generator, target_patient_generator, res, log_track))
+    env.process(target_emitter(env, target_event_generator, target_patient_generator, res, log_track,
+                               target_scale=target_flow_scale))
     env.process(background_emitter(env, res, log_track,
                                    surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale))
     env.run(until=simulation_time)

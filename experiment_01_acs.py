@@ -53,17 +53,19 @@ background_surgery_duration_gen = state_info.RvFromData(np.loadtxt('data' + ps +
 # run series
 total_log = []
 simulation_time = 60*24*60
-for bgf_scale in np.arange(0.0, 2.5, 0.5):
+for f_scale in np.arange(0.5, 2.5, 0.5):
     for nps in [1, 2, 3]:
-        for i_run in range(30):
+        for i_run in range(20):
             sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, nps,
                                                       background_surgery_gen, background_surgery_duration_gen,
-                                                      bgf_scale, simulation_time, use_queueing=True)
+                                                      0, f_scale, simulation_time, use_queueing=True)
             sim_stats = dept_des.get_queue_statistics(sim_res)
-            sim_stats['SCALE'] = bgf_scale
+            sim_stats['SCALE'] = f_scale
             sim_stats['N_SURG'] = nps
             print(sim_stats)
             total_log.append(sim_stats)
 total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
-total_log_df.to_csv('logs' + ps + 'queue-stats-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
+total_log_df.to_csv('logs' + ps + 'queue-stats-' +
+                    datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') +
+                    '-scaling-target-no-background.csv')
 
