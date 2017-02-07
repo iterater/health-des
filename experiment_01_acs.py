@@ -67,9 +67,9 @@ def single_experiment_run(target_scale, bg_scale, n_surgery, queue, run_id):
 
 if __name__ == '__main__':
     total_log = []
-    for f_scale in np.arange(0.5, 2.5, 0.5):
-        for nps in [1, 2, 3, 4]:
-            run_res = joblib.Parallel(n_jobs=4)(joblib.delayed(single_experiment_run)(f_scale, 1.0, nps, True, i_run)
+    for f_scale in [0.5, 1.0]:
+        for nps in [1, 2]:
+            run_res = joblib.Parallel(n_jobs=6)(joblib.delayed(single_experiment_run)(f_scale, 1.0, nps, True, i_run)
                                                 for i_run in range(20))
             total_log.extend(run_res)
     total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
