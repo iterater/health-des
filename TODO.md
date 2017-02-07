@@ -3,6 +3,7 @@
 ## Priority 0
 
 - Make run parpallel
+- Long run with scales 
 - Checking queue stats
 
 ## Priority 1 

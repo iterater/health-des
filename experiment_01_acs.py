@@ -6,6 +6,7 @@ import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import joblib
 
 ps = os.path.sep
 basic_path = 'data' + ps + 'acs' + ps
@@ -50,22 +51,27 @@ background_surgery_duration_gen = state_info.RvFromData(np.loadtxt('data' + ps +
 # plt.savefig('pics' + ps + 'los-ALL-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.png')
 # plt.close()
 
-# run series
-total_log = []
-simulation_time = 60*24*60
-for f_scale in np.arange(0.5, 2.5, 0.5):
-    for nps in [1, 2, 3]:
-        for i_run in range(20):
-            sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, nps,
-                                                      background_surgery_gen, background_surgery_duration_gen,
-                                                      0, f_scale, simulation_time, use_queueing=True)
-            sim_stats = dept_des.get_queue_statistics(sim_res)
-            sim_stats['SCALE'] = f_scale
-            sim_stats['N_SURG'] = nps
-            print(sim_stats)
-            total_log.append(sim_stats)
-total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
-total_log_df.to_csv('logs' + ps + 'queue-stats-' +
-                    datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') +
-                    '-scaling-target-no-background.csv')
 
+# run series
+def single_experiment_run(target_scale, bg_scale, n_surgery, queue, run_id):
+    simulation_time = 60 * 24 * 60
+    sim_res = dept_des.simulate_patients_flow(acs_patients_gen, acs_event_gen, n_surgery,
+                                              background_surgery_gen, background_surgery_duration_gen,
+                                              bg_scale, target_scale, simulation_time, use_queueing=queue)
+    sim_stats = dept_des.get_queue_statistics(sim_res)
+    sim_stats['BG_SCALE'] = bg_scale
+    sim_stats['TARGET_SCALE'] = target_scale
+    sim_stats['N_SURG'] = n_surgery
+    print(run_id, sim_stats)
+    return sim_stats
+
+if __name__ == '__main__':
+    total_log = []
+    for f_scale in np.arange(0.5, 2.5, 0.5):
+        for nps in [1, 2, 3, 4]:
+            run_res = joblib.Parallel(n_jobs=4)(joblib.delayed(single_experiment_run)(f_scale, 1.0, nps, True, i_run)
+                                                for i_run in range(20))
+            total_log.extend(run_res)
+    total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
+    total_log_df.to_csv('logs' + ps + 'queue-stats-' +
+                        datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
