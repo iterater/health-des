@@ -71,7 +71,7 @@ if __name__ == '__main__':
         for bg_s in [0.5, 1.0, 1.5, 2.0]:
             for nps in [1, 2, 3, 4, 5]:
                 run_res = joblib.Parallel(n_jobs=6)(joblib.delayed(single_experiment_run)(tg_s, bg_s, nps, True, i_run)
-                                                    for i_run in range(24))
+                                                    for i_run in range(100))
                 total_log.extend(run_res)
     total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
     total_log_df.to_csv('logs' + ps + 'queue-stats-' +
