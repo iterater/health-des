@@ -2,7 +2,7 @@
 
 ## Priority 0
 
-- Checking queue stats
+- Compare to previous experiment (?)
 
 ## Priority 1 
 
