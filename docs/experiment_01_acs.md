@@ -9,7 +9,8 @@ Simulation of patients within two flows:
 
 ## Data and classes of paths
 
-Data is located ![here](/data/acs/)
+Data is located [here](/data/acs/). 
+
 10 classes of paths for ACS were detected.
 
 ## Simulation results
