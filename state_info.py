@@ -74,9 +74,9 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path, filtering
     states_names = list(prob_matrix.columns[1:])
     states = {}
     for name in states_names:
-        if name == '*01':
+        if name.startswith('*'):
             st = StateInfo(name, transition_names=states_names, is_final=True)
-        elif name == '_01':
+        elif name.startswith('_'):
             st = StateInfo(name, transition_names=states_names,
                            transition_probabilities=list(prob_matrix[states_names].iloc[states_names.index(name)]))
         else:
