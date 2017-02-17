@@ -40,14 +40,5 @@ def single_experiment_run(target_scale, bg_scale, n_surgery, queue, run_id):
     print(run_id, sim_stats)
     return sim_stats
 
-if __name__ == '__main__':
-    total_log = []
-    for tg_s in [0.5, 1.0, 1.5, 2.0]:
-        for bg_s in [0.5, 1.0, 1.5, 2.0]:
-            for nps in [1, 2, 3, 4, 5]:
-                run_res = joblib.Parallel(n_jobs=6)(joblib.delayed(single_experiment_run)(tg_s, bg_s, nps, True, i_run)
-                                                    for i_run in range(100))
-                total_log.extend(run_res)
-    total_log_df = pd.DataFrame(total_log, columns=total_log[0].keys())
-    total_log_df.to_csv('logs' + ps + 'queue-stats-' +
-                        datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
+run_res = single_experiment_run(1.0, 1.0, 2, True, 0)
+run_res.to_csv('logs' + ps + 'sim-res-' + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') + '.csv')
