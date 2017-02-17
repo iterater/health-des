@@ -1,6 +1,6 @@
 # Experiment #2: ACS patients flow without classification
 
-Implemented in [experiment_02_acs_no_clusters.py](experiment_02_acs_no_clusters.py)
+Implemented in [experiment_02_acs_no_clusters.py](/experiment_02_acs_no_clusters.py)
 
 ## Experiment description
 

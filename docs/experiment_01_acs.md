@@ -1,6 +1,6 @@
 # Experiment #1: ACS patients flow with classification
 
-Implemented in [experiment_01_acs.py](experiment_01_acs.py)
+Implemented in [experiment_01_acs.py](/experiment_01_acs.py)
 
 ## Experiment description
 
