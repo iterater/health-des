@@ -10,7 +10,7 @@ Experiments with discrete-event simulation (DES) of patients flow passing throug
 
 Implementation is based on [SimPy](http://simpy.readthedocs.org/) with processes for flow generation and patients states transition presented by processes (see `target_emitter(...)`, `background_emitter(...)`, `background_surgery_process(...)`, and `patient(...)` in [dept_des.py](dept_des.py)). Other routins in [dept_des.py](dept_des.py):
 
-- `generate_day_sequence(...)` - generating daily sequence of incoming patients are generated with scale
+- `generate_day_sequence(...)` - generating daily sequence of delays for incoming patients (with scale)
 - `simulate_patients_flow(...)` - run single simulation
 - `get_queue_statistics(...)` - basic statistics on queueing from simulation results
 
