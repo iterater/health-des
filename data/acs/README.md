@@ -9,6 +9,7 @@ Classification of pathways for ACS patients. Ten classes were identified accordi
 - `_01` - initial state
 - `*01` - final state
 - `Axx` - reception
+- `Dxx` - reception for transfer to further treatment
 - `Exx` - cardiological department
 - `Fxx` - intensive care department
 - `Ixx` - surgery
