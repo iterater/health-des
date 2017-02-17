@@ -20,7 +20,7 @@ Here `xx` is two-digit ID of state within a group.
 
 ### Clusters
 
-For each two clusters (directories `1` and `2`, named by number of PCIs in path):
+For each of two clusters (directories `1` and `2`, named by number of PCIs in path):
 
 - `N/Transition_matrixN.csv` - transition matrix (probability of transition from state to state) for all available states (csv, headers in first row and column)
 - `N/Distr_statesN/XXX.txt` - set of observed data for length of stay in state `XXX`
