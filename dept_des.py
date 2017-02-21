@@ -36,8 +36,8 @@ def background_surgery_process(env, surgery_resource, duration, logger):
     logger.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'IN',
                    'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
     time_before_queue = env.now
-    request = surgery_resource.request()
     if surgery_resource is not None:
+        request = surgery_resource.request()
         yield request
     yield env.timeout(duration)
     if surgery_resource is not None:

@@ -41,4 +41,4 @@ def single_experiment_run(target_scale, bg_scale, n_surgery, queue, run_id):
     print(run_id, sim_stats)
     return sim_stats
 
-run_res = single_experiment_run(1.0, 0.1, 2, True, 0)
+run_res = single_experiment_run(1.0, 0.1, 2, False, 0)
