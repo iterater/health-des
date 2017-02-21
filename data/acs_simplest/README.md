@@ -19,3 +19,5 @@ Simple patients simulation: only three states (surgery, intensive care, regular 
 - `X.txt` - set of observed data for length of stay in state `X`
 
 Here `X` is states (can be obtained from transition matrices). 
+
+**NB:** Need to be checked for calibration of simulation.
