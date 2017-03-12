@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 from scipy.stats import rv_discrete, rv_continuous
+import re
 
 
 class RvFromData(rv_continuous):
@@ -82,9 +83,9 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path, filtering
         else:
             # observations = np.loadtxt(os.path.join(states_time_dir_path, name + '.txt'), delimiter=',', dtype=float)
             f = open(os.path.join(states_time_dir_path, name + '.txt'))
-            s = f.readlines()[-1].replace('[', '').replace(']', '').replace(' ', '')
+            s = re.search(name + r'\s*\[(.*)\]', f.read()).group(1)
             f.close()
-            observations = np.array(list(map(float, s.split(','))), dtype=float)
+            observations = np.array(list(map(float, re.split(r'\s*,\s*', s))), dtype=float)
             if filtering:
                 # filtering zeros
                 observations = observations[observations > 0]
