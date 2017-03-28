@@ -82,9 +82,8 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path, filtering
                            transition_probabilities=list(prob_matrix[states_names].iloc[states_names.index(name)]))
         else:
             # observations = np.loadtxt(os.path.join(states_time_dir_path, name + '.txt'), delimiter=',', dtype=float)
-            f = open(os.path.join(states_time_dir_path, name + '.txt'))
-            s = re.search(name + r'\s*\[(.*)\]', f.read()).group(1)
-            f.close()
+            with open(os.path.join(states_time_dir_path, name + '.txt')) as f:
+                s = re.search(name + r'\s*\[(.*)\]', f.read()).group(1)
             observations = np.array(list(map(float, re.split(r'\s*,\s*', s))), dtype=float)
             if filtering:
                 # filtering zeros
