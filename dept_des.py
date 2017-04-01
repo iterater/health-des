@@ -2,15 +2,17 @@ import pandas as pd
 import simpy
 import scipy.stats.mstats
 import numpy as np
+import logging
 
 
-def patient(env, patient_id, pat_class_id, starting_state, states_pool, surgery_resource, logger):
+def patient(env, patient_id, pat_class_id, starting_state, states_pool, surgery_resource, log_track):
     """Processing patients through the pool of states with queueing for states N* and I*"""
+    m_log = logging.getLogger(__name__)
     state = starting_state
     while not states_pool[state].is_final:
-        logger.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
-                       'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
-        # print(env.now, logger[-1])
+        log_track.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
+                          'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
+        m_log.info('{}: {}'.format(env.now, log_track[-1]))
         surgery_state = state[0] in ['N', 'I']
         time_before_queue = env.now
         queue_length = 0
@@ -23,18 +25,18 @@ def patient(env, patient_id, pat_class_id, starting_state, states_pool, surgery_
         yield env.timeout(duration)
         if (surgery_resource is not None) and surgery_state:
             surgery_resource.release(request)
-        logger.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
-                       'DIRECTION': 'OUT', 'QUEUE_TIME': time_in_queue, 'QUEUE_LENGTH': queue_length})
-        # print(env.now, logger[-1])
+        log_track.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
+                          'DIRECTION': 'OUT', 'QUEUE_TIME': time_in_queue, 'QUEUE_LENGTH': queue_length})
+        m_log.info('{}: {}'.format(env.now, log_track[-1]))
         state = states_pool[state].generate_next_state()
-    logger.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
-                   'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
+    log_track.append({'ID': patient_id, 'PAT_CLASS': pat_class_id, 'TIME': env.now, 'STATE': state,
+                      'DIRECTION': 'IN', 'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
 
 
-def background_surgery_process(env, surgery_resource, duration, logger):
+def background_surgery_process(env, surgery_resource, duration, log_track):
     """Processing request to surgery room"""
-    logger.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'IN',
-                   'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
+    log_track.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'IN',
+                      'QUEUE_TIME': 0, 'QUEUE_LENGTH': 0})
     time_before_queue = env.now
     if surgery_resource is not None:
         request = surgery_resource.request()
@@ -42,8 +44,8 @@ def background_surgery_process(env, surgery_resource, duration, logger):
     yield env.timeout(duration)
     if surgery_resource is not None:
         surgery_resource.release(request)
-    logger.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'OUT',
-                   'QUEUE_TIME': env.now - time_before_queue, 'QUEUE_LENGTH': 0})
+    log_track.append({'ID': -1, 'PAT_CLASS': -1, 'TIME': env.now, 'STATE': 'IXX', 'DIRECTION': 'OUT',
+                      'QUEUE_TIME': env.now - time_before_queue, 'QUEUE_LENGTH': 0})
 
 
 def generate_day_sequence(per_day_gen, time_in_day_gen, scale=1.0):
@@ -56,30 +58,32 @@ def generate_day_sequence(per_day_gen, time_in_day_gen, scale=1.0):
     return seq
 
 
-def background_emitter(env, surgery_resource, logger,
+def background_emitter(env, surgery_resource, log_track,
                        surgery_bg_event_generator, surgery_bg_time_generator, surgery_bg_scale):
     """Generating daily activity in surgery room"""
+    m_log = logging.getLogger(__name__)
     while True:
         seq = surgery_bg_event_generator.generate_day_sequence(scale=surgery_bg_scale)
-        # print('Background surgery sequence for day: ', seq)
+        m_log.info('Background surgery sequence for day: {}'.format(seq))
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
-            env.process(background_surgery_process(env, surgery_resource, int(surgery_bg_time_generator.rvs()), logger))
+            env.process(background_surgery_process(env, surgery_resource, int(surgery_bg_time_generator.rvs()), log_track))
         yield env.timeout(seq[-1] - seq[-2])
 
 
-def target_emitter(env, target_event_generator, target_patient_generator, surgery_resource, logger, target_scale=1.0):
+def target_emitter(env, target_event_generator, target_patient_generator, surgery_resource, log_track, target_scale=1.0):
     """Emitting patients with inter-patients time by span generator"""
+    m_log = logging.getLogger(__name__)
     counter = 0
     while True:
         seq = target_event_generator.generate_day_sequence(scale=target_scale)
-        # print('Planned sequence for day: ', seq)
+        m_log.info('Planned sequence for day: {}'.format(seq))
         for i in range(1, len(seq) - 1):
             yield env.timeout(seq[i] - seq[i - 1])
             pat_state, pat_pool, pat_class = target_patient_generator.get_patient()
-            env.process(patient(env, counter, pat_class, pat_state, pat_pool, surgery_resource, logger))
+            env.process(patient(env, counter, pat_class, pat_state, pat_pool, surgery_resource, log_track))
             counter += 1
-            # print(str(env.now) + ': emitting new patient #' + str(counter) + ' at ' + str(seq[i]))
+            m_log.info('{}: emitting new patient #{} at {}'.format(env.now, counter, seq[i]))
         yield env.timeout(seq[-1] - seq[-2])
 
 
