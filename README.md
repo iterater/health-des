@@ -1,5 +1,9 @@
 # Discrete-event simulation of patients flow
 
+![GitHub Release Date](https://img.shields.io/github/release-date/iterater/health-des)
+![GitHub repo size](https://img.shields.io/github/repo-size/iterater/health-des)
+![Twitter Follow](https://img.shields.io/twitter/follow/iterater?style=social)
+
 ## General description
 
 Experiments with discrete-event simulation (DES) of patients flow passing through the group of key departments (GKD). Stochastic flow of patients, transitions between states, and length of stay (LoS) in states, as well as queueing for selected states (reflecting limited facilities  like surgery rooms) are supported. Two flows are considered: (1) target flow with detailed simulation, multiple classes, individual transitions and LoS in different states for each classes; (2) background flow with reduced paths limited to queueing facilities.
