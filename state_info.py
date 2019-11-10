@@ -20,7 +20,9 @@ class RvFromData(rv_continuous):
             return 0.0
         if idx >= len(self.data):
             return 1.0
-        return (idx - 1.0 + (x - self.data[idx - 1]) / (self.data[idx] - self.data[idx - 1])) / len(self.data)
+        return (idx - 1.0 + (x - self.data[idx - 1]) / (self.data[idx] - self.data[idx - 1])) / len(
+            self.data
+        )
 
 
 class PatientsDayFlowGenerator:
@@ -45,14 +47,21 @@ class StateInfo:
     duration_generator = None
     transition_generator = None
 
-    def __init__(self, name, transition_names,
-                 transition_probabilities=None, duration_observations=None, is_final=False):
+    def __init__(
+        self,
+        name,
+        transition_names,
+        transition_probabilities=None,
+        duration_observations=None,
+        is_final=False,
+    ):
         self.name = name
         self.transition_names = transition_names
         self.is_final = is_final
         if transition_probabilities is not None:
-            self.transition_generator = rv_discrete(values=(np.arange(len(transition_probabilities)),
-                                                            transition_probabilities))
+            self.transition_generator = rv_discrete(
+                values=(np.arange(len(transition_probabilities)), transition_probabilities)
+            )
         if duration_observations is not None:
             self.duration_generator = RvFromData(initdata=duration_observations)
 
@@ -71,20 +80,25 @@ class StateInfo:
 
 def load_state_pool(transition_matrix_file_path, states_time_dir_path, filtering=True):
     """Load set of states form matrix and directory"""
-    prob_matrix = pd.read_csv(transition_matrix_file_path, sep=';')
+    prob_matrix = pd.read_csv(transition_matrix_file_path, sep=";")
     states_names = list(prob_matrix.columns[1:])
     states = {}
     for name in states_names:
-        if name.startswith('*'):
+        if name.startswith("*"):
             st = StateInfo(name, transition_names=states_names, is_final=True)
-        elif name.startswith('_'):
-            st = StateInfo(name, transition_names=states_names,
-                           transition_probabilities=list(prob_matrix[states_names].iloc[states_names.index(name)]))
+        elif name.startswith("_"):
+            st = StateInfo(
+                name,
+                transition_names=states_names,
+                transition_probabilities=list(
+                    prob_matrix[states_names].iloc[states_names.index(name)]
+                ),
+            )
         else:
             # observations = np.loadtxt(os.path.join(states_time_dir_path, name + '.txt'), delimiter=',', dtype=float)
-            with open(os.path.join(states_time_dir_path, name + '.txt')) as f:
-                s = re.search(name + r'\s*\[(.*)\]', f.read()).group(1)
-            observations = np.array(list(map(float, re.split(r'\s*,\s*', s))), dtype=float)
+            with open(os.path.join(states_time_dir_path, name + ".txt")) as f:
+                s = re.search(name + r"\s*\[(.*)\]", f.read()).group(1)
+            observations = np.array(list(map(float, re.split(r"\s*,\s*", s))), dtype=float)
             if filtering:
                 # filtering zeros
                 observations = observations[observations > 0]
@@ -96,14 +110,19 @@ def load_state_pool(transition_matrix_file_path, states_time_dir_path, filtering
                 # observations = observations[(observations > acceptable_range[0]) &
                 #                             (observations < acceptable_range[1])]
             t_prob = list(prob_matrix[states_names].iloc[states_names.index(name)])
-            st = StateInfo(name, transition_names=states_names, transition_probabilities=t_prob,
-                           duration_observations=observations)
+            st = StateInfo(
+                name,
+                transition_names=states_names,
+                transition_probabilities=t_prob,
+                duration_observations=observations,
+            )
         states[st.name] = st
     return states
 
 
 class PatientGenerator:
     """Generate patient with initial state"""
+
     def __init__(self, types_p, types_state_pool):
         self.generator = rv_discrete(values=(np.arange(len(types_p)), types_p))
         self.types_state_pool = types_state_pool
@@ -111,5 +130,5 @@ class PatientGenerator:
     def get_patient(self):
         type_id = self.generator.rvs()
         selected_state_pool = self.types_state_pool[type_id]
-        starting_state = [kk for kk in selected_state_pool.keys() if kk.startswith('_')][0]
+        starting_state = [kk for kk in selected_state_pool.keys() if kk.startswith("_")][0]
         return starting_state, selected_state_pool, type_id
