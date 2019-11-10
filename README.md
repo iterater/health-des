@@ -2,6 +2,7 @@
 
 ![GitHub Release Date](https://img.shields.io/github/release-date/iterater/health-des)
 ![GitHub repo size](https://img.shields.io/github/repo-size/iterater/health-des)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![Twitter Follow](https://img.shields.io/twitter/follow/iterater?style=social)
 
 ## General description
